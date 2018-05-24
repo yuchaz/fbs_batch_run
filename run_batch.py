@@ -2,14 +2,8 @@ import os
 import sqlite3
 import pandas as pd
 import sys
-import pickle
 from path_handler import get_path
-
-run_dir, sims_fbs_config_path = get_path()
-
-sys.path.append(sims_fbs_config_path)
-# TODO: what if originally not in yuchia-modify branch???
-from config_writer import write_config
+from utils import save_pickles, load_pickles
 import json
 import argparse
 
@@ -22,18 +16,22 @@ parser.add_argument('--run-dir', '-rD', type=str, default=None,
                     help='specified when needed to run in different run dir')
 
 
+run_dir, sims_fbs_config_path = get_path()
+os.system('./prerun_script.sh {}'.format(sims_fbs_config_path))
+sys.path.append(sims_fbs_config_path)
+from config_writer import write_config
+
 args = parser.parse_args()
 opsim_flags = args.opsim_flags
 weights_list_path = args.weights_list_path
 if args.run_dir is not None:
     run_dir = args.run_dir
-
 if not os.path.exists(weights_list_path):
     raise FileNotFoundError('{} not found'.format(weights_list_path))
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-session_db = os.path.join(run_dir, 'output', 'yuchaz_sessions.db')  # Handle self name??
+session_db = os.path.join(run_dir, 'output', 'yuchaz_sessions.db')  # TODO: Handle self name??
 config_mapping_path = os.path.join(current_dir, 'config_mapping.p')
 
 
@@ -46,16 +44,6 @@ def get_latest_sessionid(plus_one=True):
     if plus_one:
         session_id += 1
     return '{}_{}'.format(out['sessionHost'][0], session_id)
-
-
-def save_pickles(filename, data):
-    with open(filename,'wb') as f:
-        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def load_pickles(filename):
-    with open(filename, 'rb') as f:
-        return pickle.load(f)
 
 
 with open(weights_list_path, 'r') as fn:
