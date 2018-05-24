@@ -1,6 +1,6 @@
 #!/bin/bash
-export CFG_DIR=/home/opsim/repos/sims_featureScheduler/python/lsst/sims/featureScheduler/driver/config
-export RUN_DIR=/home/opsim/run_local
+export CFG_DIR=$2
+export RUN_DIR=$3
 cd $CFG_DIR
 git checkout yuchia-modify
 git checkout -b 'weights/'$1

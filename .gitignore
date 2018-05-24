@@ -3,3 +3,6 @@ unfinished_config
 template
 config_mapping.p
 weights.json
+path.cfg
+setup.py
+__pycache__/
