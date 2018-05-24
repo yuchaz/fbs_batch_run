@@ -11,15 +11,30 @@ sys.path.append(sims_fbs_config_path)
 # TODO: what if originally not in yuchia-modify branch???
 from config_writer import write_config
 import json
+import argparse
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+parser = argparse.ArgumentParser(description='Run batch feature based scheduler')
+parser.add_argument('--weights-list-path', '-wp', type=str, default='weights.json',
+                    help='The path for the weights list')
+parser.add_argument('--opsim-flags', '-of', type=str, default='--frac-duration 0.003 -v',
+                    help='The flags for opsim runs')
+parser.add_argument('--run-dir', '-rD', type=str, default=None,
+                    help='specified when needed to run in different run dir')
 
-session_db = os.path.join(run_dir, 'output', 'yuchaz_sessions.db')  # Handle self name??
-config_mapping_path = os.path.join(current_dir, 'config_mapping.p')
 
-weights_list_path = 'weights.json'
+args = parser.parse_args()
+opsim_flags = args.opsim_flags
+weights_list_path = args.weights_list_path
+if args.run_dir is not None:
+    run_dir = args.run_dir
+
 if not os.path.exists(weights_list_path):
     raise FileNotFoundError('{} not found'.format(weights_list_path))
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+session_db = os.path.join(run_dir, 'output', 'yuchaz_sessions.db')  # Handle self name??
+config_mapping_path = os.path.join(current_dir, 'config_mapping.p')
 
 
 def get_latest_sessionid(plus_one=True):
@@ -53,12 +68,11 @@ for weights in weights_list:
     write_config(weights, os.path.join(sims_fbs_config_path, 'updated.cfg'))
     next_session_id = get_latest_sessionid()
     print(next_session_id)
-    flag = os.system('./run_opsim.sh {} {} {}'.format(
-        next_session_id, sims_fbs_config_path, run_dir))
+    flag = os.system('./run_opsim.sh {} {} {} "{}"'.format(
+        next_session_id, sims_fbs_config_path, run_dir, opsim_flags))
     if flag != 0:
         os.system('./git_error_handling.sh {} {}'.format(
             next_session_id, sims_fbs_config_path))
-        # raise ValueError('Something went wrong!')
         print('Something went wrong, stopping simulation...')
         break
     config_mapping[next_session_id] = weights
