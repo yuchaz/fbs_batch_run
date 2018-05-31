@@ -1,5 +1,5 @@
 # Update the new `sims_featurescheduler`
-1. `git clone https://yuchaz@bitbucket.org/yuchaz/sims_featurescheduler.git`
+1. `git clone https://github.com/yuchaz/sims_featureScheduler.git`
 1. Mount this new repo onto docker
 
 # Docker setup

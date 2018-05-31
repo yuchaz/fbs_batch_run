@@ -53,7 +53,7 @@ if not os.path.exists(sims_fbs_config_path):
     raise FileNotFoundError(error_str)
 
 repo = Repo(sims_fbs_path)
-repo.git.checkout('yuchia-modify')
+repo.git.checkout('batchrun')
 sys.path.append(sims_fbs_config_path)
 from config_writer import write_config
 
@@ -101,8 +101,8 @@ for weights in weights_list:
     try:
         execute(['./run_opsim.sh {} "{}"'.format(run_dir, opsim_flags)])
     except Exception as e:
-        repo.git.branch('-d', 'yuchia-modify')
-        repo.git.checkout('yuchia-modify')
+        repo.git.branch('-d', 'weights/{}'.format(next_session_id))
+        repo.git.checkout('batchrun')
         logger.error('Error occurred in running feature based scheduler, '
                      'please check opsim log files')
         logger.error(e)
@@ -112,7 +112,7 @@ for weights in weights_list:
         break
     repo.index.add([update_cfg_path])
     repo.index.commit("Added updated configs")
-    repo.git.checkout('yuchia-modify')
+    repo.git.checkout('batchrun')
 
     logger.info('Finish running {}'.format(next_session_id))
     config_mapping[next_session_id] = weights
