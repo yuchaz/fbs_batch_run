@@ -19,7 +19,7 @@ def write_config():
 
     sims_fbs_config_path = os.path.join(
         sims_fbs, 'python/lsst/sims/featureScheduler/driver/config/')
-    path_config_writer(run_dir, sims_fbs_config_path)
+    path_config_writer(run_dir, sims_fbs, sims_fbs_config_path)
 
 if __name__ == '__main__':
     write_config()

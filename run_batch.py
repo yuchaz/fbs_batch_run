@@ -7,6 +7,8 @@ from utils import save_pickles, load_pickles
 import json
 import argparse
 import logging
+from git import Repo
+
 opsim_hostname = os.environ['OPSIM_HOSTNAME']
 
 parser = argparse.ArgumentParser(
@@ -20,6 +22,12 @@ parser.add_argument('--opsim-flags', '-of', type=str,
 parser.add_argument('--run-dir', '-rD', type=str, default=None,
                     help='specified when needed to run in different run dir')
 
+args = parser.parse_args()
+opsim_flags = args.opsim_flags
+weights_list_path = args.weights_list_path
+if args.run_dir is not None:
+    run_dir = args.run_dir
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,9 +39,9 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-logger.info('Start batch run')
+logger.info('Start batch run with opsim flags: {}'.format(opsim_flags))
 
-run_dir, sims_fbs_config_path = get_path()
+run_dir, sims_fbs_path, sims_fbs_config_path = get_path()
 if not os.path.exists(run_dir):
     error_str = 'Path {} not found, please check your setup.py'.format(run_dir)
     logger.error(error_str)
@@ -44,15 +52,11 @@ if not os.path.exists(sims_fbs_config_path):
     logger.error(error_str)
     raise FileNotFoundError(error_str)
 
-os.system('./prerun_script.sh {}'.format(sims_fbs_config_path))
+repo = Repo(sims_fbs_path)
+repo.git.checkout('yuchia-modify')
 sys.path.append(sims_fbs_config_path)
 from config_writer import write_config
 
-args = parser.parse_args()
-opsim_flags = args.opsim_flags
-weights_list_path = args.weights_list_path
-if args.run_dir is not None:
-    run_dir = args.run_dir
 if not os.path.exists(weights_list_path):
     error_str = '{} not found'.format(weights_list_path)
     logger.error(error_str)
@@ -91,13 +95,19 @@ for weights in weights_list:
     write_config(weights, os.path.join(sims_fbs_config_path, 'updated.cfg'))
     next_session_id = get_latest_sessionid()
     logger.info('Running opsim with session ID: {}'.format(next_session_id))
-    flag = os.system('./run_opsim.sh {} {} {} "{}"'.format(
-        next_session_id, sims_fbs_config_path, run_dir, opsim_flags))
+    repo.git.checkout('-b', 'weights/{}'.format(next_session_id))
+
+    flag = os.system('./run_opsim.sh {} "{}"'.format(run_dir, opsim_flags))
     if flag != 0:
-        os.system('./git_error_handling.sh {} {}'.format(
-            next_session_id, sims_fbs_config_path))
-        logger.error('Error occurred in running opsim, please check opsim log files')
+        repo.git.branch('-d', 'yuchia-modify')
+        repo.git.checkout('yuchia-modify')
+        logger.error('Error occurred in running feature based scheduler, '
+                     'please check opsim log files')
         break
+    repo.index.add([os.path.join(sims_fbs_config_path, 'updated.cfg')])
+    repo.index.commit("Added updated configs")
+    repo.git.checkout('yuchia-modify')
+
     logger.info('Finish running {}'.format(next_session_id))
     config_mapping[next_session_id] = weights
 

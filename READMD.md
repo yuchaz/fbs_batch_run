@@ -9,6 +9,11 @@ git config --global user.email "EMAIL"
 git config --global user.name "USER"
 ```
 
+Install GitPython for stable git version control in python script
+```
+pip install gitpython
+```
+
 
 # Path setup
 1. run `cp setup.py.tpl setup.py`
