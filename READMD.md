@@ -54,7 +54,4 @@ respectively.
 `python run_batch.py --weights-list-path weights.json --opsim-flags '--frac-duration 0.003 -v'`
 
 # TODO
-- [X] What if `session.db` does not exist? This correspond to the first run.  
-- [X] Add the functions of chaning `${OPSIM_HOSTNAME}` in CLI
-- [ ] Flexible changes for weights JSON files?
-- [ ] Change to subprocess??
+- [ ] Subprocess error handling

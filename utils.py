@@ -1,4 +1,7 @@
 import pickle
+from subprocess import Popen
+import sys
+
 
 def save_pickles(filename, data):
     with open(filename,'wb') as f:
@@ -8,3 +11,12 @@ def save_pickles(filename, data):
 def load_pickles(filename):
     with open(filename, 'rb') as f:
         return pickle.load(f)
+
+
+def execute(commands):
+    with Popen(commands, shell=True) as process:
+        try:
+            process.communicate()
+        except Exception as e:
+            process.kill()
+            raise e

@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 import sys
 from path_handler import get_path
-from utils import save_pickles, load_pickles
+from utils import save_pickles, load_pickles, execute
 import json
 import argparse
 import logging
@@ -92,23 +92,30 @@ config_mapping = (dict() if not os.path.exists(config_mapping_path)
 
 for weights in weights_list:
     logger.info('Running with weights: {}'.format(weights))
-    write_config(weights, os.path.join(sims_fbs_config_path, 'updated.cfg'))
+    update_cfg_path = os.path.join(sims_fbs_config_path, 'updated.cfg')
+    write_config(weights, update_cfg_path)
     next_session_id = get_latest_sessionid()
     logger.info('Running opsim with session ID: {}'.format(next_session_id))
     repo.git.checkout('-b', 'weights/{}'.format(next_session_id))
 
-    flag = os.system('./run_opsim.sh {} "{}"'.format(run_dir, opsim_flags))
-    if flag != 0:
+    try:
+        execute(['./run_opsim.sh {} "{}"'.format(run_dir, opsim_flags)])
+    except Exception as e:
         repo.git.branch('-d', 'yuchia-modify')
         repo.git.checkout('yuchia-modify')
         logger.error('Error occurred in running feature based scheduler, '
                      'please check opsim log files')
+        logger.error(e)
+        if os.path.exists(update_cfg_path):
+            logger.error('Error occurred, removing updated.cfg')
+            os.remove(update_cfg_path)
         break
-    repo.index.add([os.path.join(sims_fbs_config_path, 'updated.cfg')])
+    repo.index.add([update_cfg_path])
     repo.index.commit("Added updated configs")
     repo.git.checkout('yuchia-modify')
 
     logger.info('Finish running {}'.format(next_session_id))
     config_mapping[next_session_id] = weights
 
+logger.info('Saving configs to {}'.format(config_mapping_path))
 save_pickles(config_mapping_path, config_mapping)
