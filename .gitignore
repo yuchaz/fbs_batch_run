@@ -6,3 +6,4 @@ weights.json
 path.cfg
 setup.py
 __pycache__/
+batchrun.log
