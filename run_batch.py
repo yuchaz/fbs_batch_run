@@ -6,6 +6,7 @@ from path_handler import get_path
 from utils import save_pickles, load_pickles
 import json
 import argparse
+opsim_hostname = os.environ['OPSIM_HOSTNAME'])
 
 parser = argparse.ArgumentParser(description='Run batch feature based scheduler')
 parser.add_argument('--weights-list-path', '-wp', type=str, default='weights.json',
@@ -31,15 +32,16 @@ if not os.path.exists(weights_list_path):
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-session_db = os.path.join(run_dir, 'output', 'yuchaz_sessions.db')  # TODO: Handle self name??
+session_db = os.path.join(run_dir, 'output', '{}_sessions.db'.format(opsim_hostname))
 config_mapping_path = os.path.join(current_dir, 'config_mapping.p')
 
 
 def get_latest_sessionid(plus_one=True):
     if not os.path.exists(session_db):
-        return 'yuchaz_2000'  # This part now is hard coded! need to think of way to do it.
+        return '{}_2000'.format(opsim_hostname)
     con = sqlite3.connect(session_db)
-    out = pd.read_sql('SELECT sessionHost, sessionId as s from Session order by s desc limit 1', con)
+    out = pd.read_sql('SELECT sessionHost, sessionId as s from Session '
+                      'order by s desc limit 1', con)
     session_id = out['s'][0]
     if plus_one:
         session_id += 1
@@ -49,7 +51,8 @@ def get_latest_sessionid(plus_one=True):
 with open(weights_list_path, 'r') as fn:
     weights_list = json.load(fn)
 
-config_mapping = dict() if not os.path.exists(config_mapping_path) else load_pickles(config_mapping_path)
+config_mapping = (dict() if not os.path.exists(config_mapping_path)
+                  else load_pickles(config_mapping_path))
 
 for weights in weights_list:
     print(weights)
